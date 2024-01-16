@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 
 namespace PlayerStateMachine
 {
+    [Serializable]
     public class PlayerJumpState : BaseState<PlayerStateMachine.EState>
     {
         public PlayerJumpState(PlayerStateMachine.EState key, PlayerStateMachine context, int level) : base(key, context, level)

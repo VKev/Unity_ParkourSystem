@@ -7,66 +7,69 @@ namespace PlayerStateMachine
     {
         public enum EState
         {
+            Root,
             Grounded, Jump,
             Idle, Run,
             Slide,
         }
 
+        [SerializeField] public PlayerRootState rootState;
+        [SerializeField] public PlayerIdleState idleState;
+        [SerializeField] public PlayerJumpState jumpState;
+        [SerializeField] public PlayerGroundedState groundedState;
+        [SerializeField] public PlayerRunState runState;
+        [SerializeField] public PlayerSlideState slideState;
+        public PlayerStateMachine()
+        {
+            rootState = new PlayerRootState(EState.Root, this, 0);
+
+            groundedState = new PlayerGroundedState(EState.Grounded, this, 1);
+            jumpState = new PlayerJumpState(EState.Jump, this, 1);
+
+            runState = new PlayerRunState(EState.Run, this, 2);
+            idleState = new PlayerIdleState(EState.Idle, this, 2);
+
+            slideState = new PlayerSlideState(EState.Slide, this, 3);
+        }
+
         [HideInInspector] public Animator anim;
         [HideInInspector] public Rigidbody rigid;
         [HideInInspector] public Camera mainCamera;
+        [HideInInspector] public CapsuleCollider mainCollider;
 
-        [Space(10)]
-        [Header("HORIZONTAL MOVEMENT")]
-        [SerializeField] private float moveSpeed = 230f;
-        [SerializeField] private float rotationSpeed = 10f;
-        [Space(10)]
-        [SerializeField] private float acceleration = 2f;
-        [SerializeField] private float deceleration = 2f;
-        [SerializeField] private float walkRunSpeedRatio = 0.5f;
-        [Space(10)]
-        [SerializeField] private float maxSlopeAngle = 50f;
-        [SerializeField] private float maxStairHeight = 0.25f;
-        [SerializeField] private float maxRoughSurfaceHeight = 0.05f;
-        public float MoveSpeed { get { return moveSpeed; } }
-        public float RotationSpeed { get { return rotationSpeed; } }
-        public float Acceleration { get { return acceleration; } }
-        public float Deceleration { get { return deceleration; } }
-        public float WalkRunSpeedRatio { get { return walkRunSpeedRatio; } }
-        public float MaxSlopeAngle { get { return maxSlopeAngle; } }
-        public float MaxStairHeight { get { return maxStairHeight; } }
-        public float MaxRoughSurfaceHeight { get { return maxRoughSurfaceHeight; } }
+        public float ColliderHeight { get; private set; }
+        public float ColliderRadius { get; private set; }
 
-        [HideInInspector] public float horizontalVelocityPercentage;
-        [HideInInspector] public float velocityPercentageThreshold;
-
-        [HideInInspector] public Vector2 walkInput;
-
-        [HideInInspector] public bool isSlope;
 
         public const string VERTICAL_HEIGHT_PERCENTAGE = "Vertical_ClampHeight";
         public const string HORIZONTAL_VELOCITY_PERCENTAGE = "Horizontal_ClampVelocity";
+
 
         public void Awake()
         {
             rigid = GetComponent<Rigidbody>();
             anim = GetComponent<Animator>();
+            mainCollider = GetComponent<CapsuleCollider>();
+
+            ColliderHeight = GetComponent<CapsuleCollider>().height * transform.lossyScale.y;
+            ColliderRadius = GetComponent<CapsuleCollider>().radius * transform.lossyScale.x;
 
             mainCamera = Camera.main;
-
         }
 
         public void Start()
         {
-            States[EState.Grounded] = new PlayerGroundedState(EState.Grounded, this, 0);
-            States[EState.Jump] = new PlayerJumpState(EState.Jump, this, 0);
+            States[EState.Root] = rootState;
 
-            States[EState.Run] = new PlayerRunState(EState.Run, this, 1);
-            States[EState.Idle] = new PlayerIdleState(EState.Idle, this, 1);
+            States[EState.Grounded] = groundedState;
+            States[EState.Jump] = jumpState;
 
-            States[EState.Slide] = new PlayerSlideState(EState.Slide, this, 2);
+            States[EState.Run] = runState;
+            States[EState.Idle] = idleState;
 
-            CurrentState = States[EState.Grounded];
+            States[EState.Slide] = slideState;
+
+            CurrentState = States[EState.Root];
             CurrentState.EnterStates(CurrentState);
         }
 

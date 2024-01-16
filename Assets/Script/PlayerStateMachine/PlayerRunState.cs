@@ -1,15 +1,23 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using static VkevLibrary;
 
 namespace PlayerStateMachine
 {
+    [Serializable]
     public class PlayerRunState : BaseState<PlayerStateMachine.EState>
     {
         PlayerStateMachine player;
+
         Coroutine accelerateCoroutine;
         Coroutine decelerateCoroutine;
+
+        [HideInInspector] public float horizontalVelocityPercentage { get; private set; }
+        [HideInInspector] public float velocityPercentageThreshold { get; private set; }
+
+        [HideInInspector] public Vector2 walkInput;
 
         public PlayerRunState(PlayerStateMachine.EState key, PlayerStateMachine context, int level) : base(key, context, level)
         {
@@ -19,6 +27,8 @@ namespace PlayerStateMachine
         public override void UpdateState()
         {
             OnRotation();
+
+            player.anim.SetFloat(PlayerStateMachine.HORIZONTAL_VELOCITY_PERCENTAGE, horizontalVelocityPercentage);
         }
         public override void FixedUpdateState()
         {
@@ -27,20 +37,20 @@ namespace PlayerStateMachine
         private void OnRotation()
         {
             Vector3 moveDir;
-            moveDir = new Vector3(player.walkInput.x, 0, player.walkInput.y);
+            moveDir = new Vector3(walkInput.x, 0, walkInput.y);
 
             Vector3 rotationDir = Quaternion.AngleAxis(player.mainCamera.transform.rotation.eulerAngles.y, Vector3.up) * moveDir;
-            Vector3 lookDir = Vector3.RotateTowards(player.transform.forward, rotationDir, Time.deltaTime * player.RotationSpeed, 0.0f);
+            Vector3 lookDir = Vector3.RotateTowards(player.transform.forward, rotationDir, Time.deltaTime * player.groundedState.RotationSpeed, 0.0f);
             player.transform.rotation = Quaternion.LookRotation(lookDir);
         }
         private void OnMove()
         {
-            Vector2 slowRunInput_Lerped = Vector2.Lerp(Vector2.zero, player.walkInput, player.horizontalVelocityPercentage);
+            Vector2 slowRunInput_Lerped = Vector2.Lerp(Vector2.zero, walkInput, horizontalVelocityPercentage);
 
             Vector3 moveDir;
             moveDir = new Vector3(slowRunInput_Lerped.x, 0, slowRunInput_Lerped.y);
             moveDir = new Vector3(moveDir.x, player.rigid.velocity.y, moveDir.z);
-            moveDir = Quaternion.AngleAxis(player.mainCamera.transform.eulerAngles.y, Vector3.up) * moveDir * player.MoveSpeed * Time.fixedDeltaTime;
+            moveDir = Quaternion.AngleAxis(player.mainCamera.transform.eulerAngles.y, Vector3.up) * moveDir * player.groundedState.MoveSpeed * Time.fixedDeltaTime;
 
             player.rigid.velocity = new Vector3(moveDir.x, player.rigid.velocity.y, moveDir.z);
         }
@@ -51,7 +61,12 @@ namespace PlayerStateMachine
             InputController.WalkAction.AddCanceled(WalkActionCanceled);
             InputController.RunAction.AddPerformed(RunActionPerformed);
             InputController.RunAction.AddCanceled(RunActionCanceled);
-            accelerateCoroutine = player.StartCoroutine(Accelerate(player.velocityPercentageThreshold));
+
+            velocityPercentageThreshold = player.groundedState.WalkRunSpeedRatio;
+            if (InputController.RunAction.isPressed)
+                velocityPercentageThreshold = 1f;
+
+            accelerateCoroutine = player.StartCoroutine(Accelerate(velocityPercentageThreshold));
 
             player.rigid.velocity = new Vector3(0, player.rigid.velocity.y, 0);
         }
@@ -69,7 +84,7 @@ namespace PlayerStateMachine
         {
             StopCoroutine(decelerateCoroutine, player);
             StopCoroutine(accelerateCoroutine, player);
-            accelerateCoroutine = player.StartCoroutine(Accelerate(player.velocityPercentageThreshold));
+            accelerateCoroutine = player.StartCoroutine(Accelerate(velocityPercentageThreshold));
         }
         private void WalkActionCanceled(InputAction.CallbackContext context)
         {
@@ -82,40 +97,40 @@ namespace PlayerStateMachine
         {
             StopCoroutine(accelerateCoroutine, player);
 
-            player.velocityPercentageThreshold = 1f;
-            accelerateCoroutine = player.StartCoroutine(Accelerate(player.velocityPercentageThreshold));
+            velocityPercentageThreshold = 1f;
+            accelerateCoroutine = player.StartCoroutine(Accelerate(velocityPercentageThreshold));
         }
         private void RunActionCanceled(InputAction.CallbackContext context)
         {
             StopCoroutine(accelerateCoroutine, player);
 
-            player.velocityPercentageThreshold = player.WalkRunSpeedRatio;
+            velocityPercentageThreshold = player.groundedState.WalkRunSpeedRatio;
 
-            if (InputController.WalkAction.isPressed && player.horizontalVelocityPercentage >= player.WalkRunSpeedRatio)
+            if (InputController.WalkAction.isPressed && horizontalVelocityPercentage >= player.groundedState.WalkRunSpeedRatio)
             {
-                decelerateCoroutine = player.StartCoroutine(Decelerate(player.velocityPercentageThreshold));
+                decelerateCoroutine = player.StartCoroutine(Decelerate(velocityPercentageThreshold));
             }
-            else if (player.horizontalVelocityPercentage < player.WalkRunSpeedRatio)
+            else if (horizontalVelocityPercentage < player.groundedState.WalkRunSpeedRatio)
             {
-                accelerateCoroutine = player.StartCoroutine(Accelerate(player.velocityPercentageThreshold));
+                accelerateCoroutine = player.StartCoroutine(Accelerate(velocityPercentageThreshold));
             }
         }
         public IEnumerator Accelerate(float maxAcceleratePercentage)
         {
             while (InputController.WalkAction.isPressed)
             {
-                player.walkInput = InputController.WalkAction.action.ReadValue<Vector2>();
-                player.horizontalVelocityPercentage += Time.deltaTime * player.Acceleration;
+                walkInput = InputController.WalkAction.action.ReadValue<Vector2>();
+                horizontalVelocityPercentage += Time.deltaTime * player.groundedState.Acceleration;
 
 
-                if (player.horizontalVelocityPercentage >= maxAcceleratePercentage)
+                if (horizontalVelocityPercentage >= maxAcceleratePercentage)
                 {
-                    player.horizontalVelocityPercentage = maxAcceleratePercentage;
+                    horizontalVelocityPercentage = maxAcceleratePercentage;
                     break;
                 }
                 yield return null;
             }
-            if (player.horizontalVelocityPercentage <= 0)
+            if (horizontalVelocityPercentage <= 0)
             {
                 TransitionToState(PlayerStateMachine.EState.Idle);
             }
@@ -125,16 +140,16 @@ namespace PlayerStateMachine
         {
             while (true)
             {
-                player.horizontalVelocityPercentage -= Time.deltaTime * player.Deceleration;
+                horizontalVelocityPercentage -= Time.deltaTime * player.groundedState.Deceleration;
 
-                if (player.horizontalVelocityPercentage < minDeceleratePercentage)
+                if (horizontalVelocityPercentage < minDeceleratePercentage)
                 {
-                    player.horizontalVelocityPercentage = minDeceleratePercentage;
+                    horizontalVelocityPercentage = minDeceleratePercentage;
                     break;
                 }
                 yield return null;
             }
-            if (player.horizontalVelocityPercentage <= 0)
+            if (horizontalVelocityPercentage <= 0)
             {
                 TransitionToState(PlayerStateMachine.EState.Idle);
             }

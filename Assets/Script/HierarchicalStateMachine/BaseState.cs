@@ -20,9 +20,9 @@ public abstract class BaseState<EState> where EState : Enum
     public bool hasFather => CurrentSuperState != null;
     public bool hasChild => CurrentSubState != null;
 
-    public StateManager<EState> stateManager;
-    public BaseState<EState> CurrentSuperState { get; private set; }
-    public BaseState<EState> CurrentSubState { get; private set; }
+    [HideInInspector] public StateManager<EState> stateManager;
+    [HideInInspector] public BaseState<EState> CurrentSuperState { get; private set; }
+    [HideInInspector] public BaseState<EState> CurrentSubState { get; private set; }
 
     public void TransitionToState(EState newStateKey)
     {
