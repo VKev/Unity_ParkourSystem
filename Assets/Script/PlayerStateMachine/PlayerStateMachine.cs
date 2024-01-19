@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 namespace PlayerStateMachine
 {
@@ -8,15 +9,17 @@ namespace PlayerStateMachine
         public enum EState
         {
             Root,
-            Grounded, Jump,
-            Idle, Run,
+            Grounded, InAir,
+            Idle, Run, Jump, Fall,
             Slide,
         }
 
         [SerializeField] public PlayerRootState rootState;
-        [SerializeField] public PlayerIdleState idleState;
-        [SerializeField] public PlayerJumpState jumpState;
         [SerializeField] public PlayerGroundedState groundedState;
+        [SerializeField] public PlayerInAirState inAirState;
+        [SerializeField] public PlayerFallState fallState;
+        [SerializeField] public PlayerJumpState jumpState;
+        [SerializeField] public PlayerIdleState idleState;
         [SerializeField] public PlayerRunState runState;
         [SerializeField] public PlayerSlideState slideState;
         public PlayerStateMachine()
@@ -24,8 +27,10 @@ namespace PlayerStateMachine
             rootState = new PlayerRootState(EState.Root, this, 0);
 
             groundedState = new PlayerGroundedState(EState.Grounded, this, 1);
-            jumpState = new PlayerJumpState(EState.Jump, this, 1);
+            inAirState = new PlayerInAirState(EState.InAir, this, 1);
 
+            jumpState = new PlayerJumpState(EState.Jump, this, 2);
+            fallState = new PlayerFallState(EState.Fall, this, 2);
             runState = new PlayerRunState(EState.Run, this, 2);
             idleState = new PlayerIdleState(EState.Idle, this, 2);
 
@@ -62,26 +67,32 @@ namespace PlayerStateMachine
             States[EState.Root] = rootState;
 
             States[EState.Grounded] = groundedState;
-            States[EState.Jump] = jumpState;
+            States[EState.InAir] = inAirState;
 
+            States[EState.Fall] = fallState;
+            States[EState.Jump] = jumpState;
             States[EState.Run] = runState;
             States[EState.Idle] = idleState;
 
             States[EState.Slide] = slideState;
 
+            States[EState.Root].SetSubState(EState.InAir);
+            States[EState.Grounded].SetSubState(EState.Idle);
+            States[EState.InAir].SetSubState(EState.Fall);
+
             CurrentState = States[EState.Root];
-            CurrentState.EnterStates(CurrentState);
+            CurrentState.EnterState();
         }
 
         public void Update()
         {
-            CurrentState.UpdateStates(CurrentState);
+            CurrentState.UpdateStates();
 
-            Debug.Log(CurrentState.GetAllCurrentStatesToString(CurrentState));
+            Debug.Log(CurrentState.GetAllCurrentStatesToString());
         }
         public void FixedUpdate()
         {
-            CurrentState.FixedUpdateStates(CurrentState);
+            CurrentState.FixedUpdateStates();
         }
     }
 }

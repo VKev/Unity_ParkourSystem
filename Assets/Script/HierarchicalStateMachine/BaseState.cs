@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 
@@ -31,23 +32,41 @@ public abstract class BaseState<EState> where EState : Enum
         {
             if (hasFather)
             {
-                newState.SetSuperState(CurrentSuperState.StateKey);
+                if (!newState.hasFather || (newState.hasFather && newState.CurrentSuperState == CurrentSuperState))
+                {
+                    newState.SetSuperState(CurrentSuperState.StateKey);
+                }
+                else if (newState.hasFather && newState.CurrentSuperState != CurrentSuperState)
+                {
+                    ExitAllSuperStates();
+                    newState.EnterAllSuperStates();
+                }
             }
-            if (hasChild)
-            {
-                newState.SetSubState(CurrentSubState.StateKey);
-            }
-
             ExitState();
             newState.EnterState();
+
+            if (hasChild)
+            {
+                if (!newState.hasChild || (newState.hasChild && newState.CurrentSubState == CurrentSubState))
+                {
+                    newState.SetSubState(CurrentSubState.StateKey);
+                }
+                else if (newState.hasChild && newState.CurrentSubState != CurrentSubState)
+                {
+                    ExitAllSubStates();
+                    newState.EnterAllSubStates();
+                }
+            }
+
             stateManager.CurrentState = newState;
+
         }
         else
         {
             Debug.LogWarning($"Hierarchical State Machine: Transition from {this.StateKey} state to {newStateKey} state, wrong level");
         }
     }
-    protected void SetSuperState(EState newStateKey)
+    public void SetSuperState(EState newStateKey)
     {
         BaseState<EState> newState = stateManager.States[newStateKey];
         if (newState.level - level == -1)
@@ -61,7 +80,7 @@ public abstract class BaseState<EState> where EState : Enum
             Debug.LogWarning($"Hierarchical State Machine: Set super state of {this.StateKey} state, wrong level");
         }
     }
-    protected void SetSubState(EState newStateKey)
+    public void SetSubState(EState newStateKey)
     {
         BaseState<EState> newState = stateManager.States[newStateKey];
         if (newState.level - level == 1)
@@ -90,7 +109,7 @@ public abstract class BaseState<EState> where EState : Enum
     public virtual void OnTriggerExit(Collider other) { }
     public virtual void OnDrawGizmos() { }
 
-    public void UpdateStates(BaseState<EState> previousState)
+    public void UpdateStates(BaseState<EState> previousState = null)
     {
         UpdateState();
         if (CurrentSuperState != null && CurrentSuperState != previousState)
@@ -98,7 +117,7 @@ public abstract class BaseState<EState> where EState : Enum
         if (CurrentSubState != null && CurrentSubState != previousState)
             CurrentSubState.UpdateStates(this);
     }
-    public void EnterStates(BaseState<EState> previousState)
+    public void EnterStates(BaseState<EState> previousState = null)
     {
         EnterState();
         if (CurrentSuperState != null && CurrentSuperState != previousState)
@@ -106,7 +125,39 @@ public abstract class BaseState<EState> where EState : Enum
         if (CurrentSubState != null && CurrentSubState != previousState)
             CurrentSubState.EnterStates(this);
     }
-    public void FixedUpdateStates(BaseState<EState> previousState)
+    public void EnterAllSuperStates()
+    {
+        if (CurrentSuperState != null)
+        {
+            CurrentSuperState.EnterAllSuperStates();
+            CurrentSuperState.EnterState();
+        }
+    }
+    public void EnterAllSubStates()
+    {
+        if (CurrentSubState != null)
+        {
+            CurrentSubState.EnterState();
+            CurrentSubState.EnterAllSubStates();
+        }
+    }
+    public void ExitAllSuperStates()
+    {
+        if (CurrentSuperState != null)
+        {
+            CurrentSuperState.ExitAllSuperStates();
+            CurrentSuperState.ExitState();
+        }
+    }
+    public void ExitAllSubStates()
+    {
+        if (CurrentSubState != null)
+        {
+            CurrentSubState.ExitState();
+            CurrentSubState.ExitAllSubStates();
+        }
+    }
+    public void FixedUpdateStates(BaseState<EState> previousState = null)
     {
         FixedUpdateState();
         if (CurrentSuperState != null && CurrentSuperState != previousState)
@@ -115,9 +166,8 @@ public abstract class BaseState<EState> where EState : Enum
             CurrentSubState.FixedUpdateStates(this);
     }
 
-
     //For debug
-    public string GetAllCurrentStatesToString(BaseState<EState> previousState)
+    public string GetAllCurrentStatesToString(BaseState<EState> previousState = null)
     {
         string output = "";
         if (CurrentSuperState != null && CurrentSuperState != previousState)

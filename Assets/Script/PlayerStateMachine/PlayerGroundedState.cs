@@ -39,18 +39,23 @@ namespace PlayerStateMachine
         }
         public override void EnterState()
         {
-            if (CurrentSubState == null)
-                SetSubState(PlayerStateMachine.EState.Idle);
 
             player.rigid.velocity = new Vector3(player.rigid.velocity.x, 0f, player.rigid.velocity.z);
             if (CurrentSubState.StateKey == PlayerStateMachine.EState.Idle)
                 player.rigid.velocity = Vector3.zero;
-            player.rigid.useGravity = false;
 
+        }
+        public override void CheckTransition()
+        {
+            if (!player.rootState.IsGrounded)
+            {
+                TransitionToState(PlayerStateMachine.EState.InAir);
+            }
         }
         public override void UpdateState()
         {
             HandleStairMovement();
+            CheckTransition();
         }
 
         private float positionOffsetY_SmoothDamp;
@@ -70,6 +75,7 @@ namespace PlayerStateMachine
                 player.transform.position = player.transform.position + new Vector3(0, positionOffsetY, 0);
 
             }
+
         }
     }
 }

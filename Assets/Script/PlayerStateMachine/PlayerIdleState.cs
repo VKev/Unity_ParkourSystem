@@ -19,10 +19,14 @@ namespace PlayerStateMachine
         }
         public override void EnterState()
         {
-            InputController.WalkAction.AddPerformed(WalkActionPerform);
 
-            if (CurrentSuperState.StateKey == PlayerStateMachine.EState.Grounded)
+            InputController.WalkAction.AddPerformed(WalkActionPerform);
+            if (InputController.WalkAction.isPressed)
+                TransitionToState(PlayerStateMachine.EState.Run);
+
+            if (CurrentSuperState?.StateKey == PlayerStateMachine.EState.Grounded)
                 player.rigid.velocity = Vector3.zero;
+
 
         }
 
@@ -33,6 +37,7 @@ namespace PlayerStateMachine
 
         public override void ExitState()
         {
+
             InputController.WalkAction.RemovePerformed(WalkActionPerform);
         }
     }

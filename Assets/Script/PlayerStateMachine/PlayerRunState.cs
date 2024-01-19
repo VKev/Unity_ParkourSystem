@@ -10,7 +10,6 @@ namespace PlayerStateMachine
     public class PlayerRunState : BaseState<PlayerStateMachine.EState>
     {
         PlayerStateMachine player;
-
         Coroutine accelerateCoroutine;
         Coroutine decelerateCoroutine;
 
@@ -23,11 +22,36 @@ namespace PlayerStateMachine
         {
             player = context;
         }
+        public override void EnterState()
+        {
+            InputController.WalkAction.AddPerformed(WalkActionPerform);
+            InputController.WalkAction.AddCanceled(WalkActionCanceled);
+            InputController.RunAction.AddPerformed(RunActionPerformed);
+            InputController.RunAction.AddCanceled(RunActionCanceled);
 
+            velocityPercentageThreshold = player.groundedState.WalkRunSpeedRatio;
+            if (InputController.RunAction.isPressed)
+                velocityPercentageThreshold = 1f;
+
+            accelerateCoroutine = player.StartCoroutine(Accelerate(velocityPercentageThreshold));
+
+            player.rigid.velocity = new Vector3(0, player.rigid.velocity.y, 0);
+        }
+        public override void ExitState()
+        {
+            InputController.WalkAction.RemovePerformed(WalkActionPerform);
+            InputController.WalkAction.RemoveCanceled(WalkActionCanceled);
+            InputController.RunAction.RemovePerformed(RunActionPerformed);
+            InputController.RunAction.RemoveCanceled(RunActionCanceled);
+
+            horizontalVelocityPercentage = 0f;
+
+            StopCoroutine(accelerateCoroutine, player);
+            StopCoroutine(decelerateCoroutine, player);
+        }
         public override void UpdateState()
         {
             OnRotation();
-
             player.anim.SetFloat(PlayerStateMachine.HORIZONTAL_VELOCITY_PERCENTAGE, horizontalVelocityPercentage);
         }
         public override void FixedUpdateState()
@@ -55,31 +79,6 @@ namespace PlayerStateMachine
             player.rigid.velocity = new Vector3(moveDir.x, player.rigid.velocity.y, moveDir.z);
         }
 
-        public override void EnterState()
-        {
-            InputController.WalkAction.AddPerformed(WalkActionPerform);
-            InputController.WalkAction.AddCanceled(WalkActionCanceled);
-            InputController.RunAction.AddPerformed(RunActionPerformed);
-            InputController.RunAction.AddCanceled(RunActionCanceled);
-
-            velocityPercentageThreshold = player.groundedState.WalkRunSpeedRatio;
-            if (InputController.RunAction.isPressed)
-                velocityPercentageThreshold = 1f;
-
-            accelerateCoroutine = player.StartCoroutine(Accelerate(velocityPercentageThreshold));
-
-            player.rigid.velocity = new Vector3(0, player.rigid.velocity.y, 0);
-        }
-        public override void ExitState()
-        {
-            InputController.WalkAction.RemovePerformed(WalkActionPerform);
-            InputController.WalkAction.RemoveCanceled(WalkActionCanceled);
-            InputController.RunAction.RemovePerformed(RunActionPerformed);
-            InputController.RunAction.RemoveCanceled(RunActionCanceled);
-
-            StopCoroutine(accelerateCoroutine, player);
-            StopCoroutine(decelerateCoroutine, player);
-        }
         private void WalkActionPerform(InputAction.CallbackContext context)
         {
             StopCoroutine(decelerateCoroutine, player);

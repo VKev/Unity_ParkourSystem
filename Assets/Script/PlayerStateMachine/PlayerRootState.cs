@@ -37,7 +37,7 @@ namespace PlayerStateMachine
 
         public override void EnterState()
         {
-            SetSubState(PlayerStateMachine.EState.Grounded);
+            CurrentSubState.EnterState();
 
             FloatingHeight = maxFloatingHeight;
         }
@@ -69,7 +69,8 @@ namespace PlayerStateMachine
             distanceToGround = ColliderBottomPoint.y - groundHit.point.y;
             OriginPoint = ColliderBottomPoint - maxFloatingHeight * Vector3.up;
 
-            if (distanceToGround <= maxFloatingHeight)
+            if (distanceToGround <= ((CurrentSubState?.StateKey == PlayerStateMachine.EState.Grounded) ?
+                                    maxFloatingHeight + player.groundedState.MaxStairHeight : maxFloatingHeight))
                 IsGrounded = true;
             else
                 IsGrounded = false;
