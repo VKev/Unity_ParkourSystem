@@ -10,10 +10,11 @@ namespace PlayerStateMachine
         {
             Root,
             Grounded, InAir,
-            Idle, Run, Jump, Fall,
+            Idle, Run, GroundedParkour, Jump, Fall,
             Slide,
         }
-
+        [SerializeField] private bool showGizmos;
+        [SerializeField] private bool stateDebug;
         [SerializeField] public PlayerRootState rootState;
         [SerializeField] public PlayerGroundedState groundedState;
         [SerializeField] public PlayerInAirState inAirState;
@@ -21,6 +22,7 @@ namespace PlayerStateMachine
         [SerializeField] public PlayerJumpState jumpState;
         [SerializeField] public PlayerIdleState idleState;
         [SerializeField] public PlayerRunState runState;
+        [SerializeField] public PlayerGroundedParkourState groundedParkourState;
         [SerializeField] public PlayerSlideState slideState;
         public PlayerStateMachine()
         {
@@ -33,6 +35,7 @@ namespace PlayerStateMachine
             fallState = new PlayerFallState(EState.Fall, this, 2);
             runState = new PlayerRunState(EState.Run, this, 2);
             idleState = new PlayerIdleState(EState.Idle, this, 2);
+            groundedParkourState = new PlayerGroundedParkourState(EState.GroundedParkour, this, 2);
 
             slideState = new PlayerSlideState(EState.Slide, this, 3);
         }
@@ -64,6 +67,8 @@ namespace PlayerStateMachine
 
         public void Start()
         {
+            showGizmos = true;
+
             States[EState.Root] = rootState;
 
             States[EState.Grounded] = groundedState;
@@ -73,6 +78,7 @@ namespace PlayerStateMachine
             States[EState.Jump] = jumpState;
             States[EState.Run] = runState;
             States[EState.Idle] = idleState;
+            States[EState.GroundedParkour] = groundedParkourState;
 
             States[EState.Slide] = slideState;
 
@@ -84,15 +90,26 @@ namespace PlayerStateMachine
             CurrentState.EnterState();
         }
 
+        private void OnDrawGizmos()
+        {
+            if (showGizmos)
+                States[EState.Root].OnDrawGizmos();
+        }
+
         public void Update()
         {
             CurrentState.UpdateStates();
 
-            Debug.Log(CurrentState.GetAllCurrentStatesToString());
+            if (stateDebug)
+                Debug.Log(CurrentState.GetAllCurrentStatesToString());
         }
         public void FixedUpdate()
         {
             CurrentState.FixedUpdateStates();
+        }
+        private void OnAnimatorIK(int layerIndex)
+        {
+            CurrentState.OnAnimationIK(layerIndex);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace PlayerStateMachine
@@ -10,18 +11,20 @@ namespace PlayerStateMachine
         PlayerStateMachine player;
 
         [Header("FLOATING CAPSULE")]
+        [SerializeField] private Vector3 obstacleDetectionOffset = new Vector3(0, 0, 1f);
+        [SerializeField] private Vector3 obstacleHalfExtend = new Vector3(0.15f, 0.01f, 0.2f);
         [SerializeField] private float maxFloatingHeight;
-        public float FloatingHeight { get; private set; }
 
+
+        [SerializeField] private LayerMask groundLayers;
+        public LayerMask GroundLayers { get { return groundLayers; } }
 
 
         private float distanceToGround;
-        private RaycastHit groundHit;
-        [SerializeField] private LayerMask groundLayers;
         public float DistanceToGround { get { return distanceToGround; } }
-        public LayerMask GroundLayers { get { return groundLayers; } }
+
+        private RaycastHit groundHit;
         public RaycastHit GroundHit { get { return groundHit; } }
-        public bool IsGrounded { get; private set; }
 
 
 
@@ -29,6 +32,11 @@ namespace PlayerStateMachine
         public Vector3 ColliderCenterPoint { get; private set; }
         public Vector3 ColliderBottomPoint { get; private set; }
         public Vector3 OriginPoint { get; private set; }
+
+        public bool IsGrounded { get; private set; }
+        public bool IsObstacle { get; private set; }
+        public float FloatingHeight { get; private set; }
+        public float DetectedObstacleHeight { get; private set; }
 
         public PlayerRootState(PlayerStateMachine.EState key, PlayerStateMachine context, int level) : base(key, context, level)
         {
@@ -40,6 +48,8 @@ namespace PlayerStateMachine
             CurrentSubState.EnterState();
 
             FloatingHeight = maxFloatingHeight;
+            obstacleDetectionOffset.z *= player.ColliderRadius;
+            obstacleDetectionOffset.z += obstacleHalfExtend.z;
         }
 
         public override void UpdateState()
@@ -49,6 +59,7 @@ namespace PlayerStateMachine
         public override void FixedUpdateState()
         {
             GroundSphereCast();
+            ObstacleDetection();
         }
 
         private void GroundSphereCast()
@@ -74,6 +85,33 @@ namespace PlayerStateMachine
                 IsGrounded = true;
             else
                 IsGrounded = false;
+        }
+
+        private void ObstacleDetection()
+        {
+            if (IsObstacle = Physics.BoxCast(
+                ColliderTopPoint + player.transform.forward * obstacleDetectionOffset.z
+                + new Vector3(obstacleDetectionOffset.x, obstacleDetectionOffset.y, 0f),
+                obstacleHalfExtend, Vector3.down,
+                out RaycastHit hitInfo, player.transform.rotation,
+                player.ColliderHeight + maxFloatingHeight - player.groundedState.MaxStairHeight, GroundLayers))
+            {
+                DetectedObstacleHeight = hitInfo.point.y - OriginPoint.y;
+                Debug.DrawLine(hitInfo.point, hitInfo.point + Vector3.up * (ColliderTopPoint.y - hitInfo.point.y), Color.red);
+            }
+
+
+        }
+
+        public override void OnDrawGizmos()
+        {
+            Gizmos.matrix = player.transform.localToWorldMatrix;
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(player.transform.InverseTransformPoint(
+                                ColliderTopPoint
+                                + player.transform.forward * obstacleDetectionOffset.z
+                                + new Vector3(obstacleDetectionOffset.x, obstacleDetectionOffset.y, 0f)),
+                                2 * obstacleHalfExtend);
         }
     }
 }

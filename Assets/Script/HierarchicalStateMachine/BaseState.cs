@@ -6,7 +6,7 @@ using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 
-public abstract class BaseState<EState> where EState : Enum
+public class BaseState<EState> where EState : Enum
 {
 
     public BaseState(EState key, StateManager<EState> context, int level)
@@ -101,7 +101,7 @@ public abstract class BaseState<EState> where EState : Enum
     public virtual void UpdateState() { }
     public virtual void FixedUpdateState() { }
     public virtual void LateUpdateState() { }
-    public virtual void OnAnimationIK(int index) { }
+    public virtual void OnAnimationIK(int layerIndex) { }
     public virtual void CheckTransition() { }
     public virtual void InitializeSubState() { }
     public virtual void OnTriggerEnter(Collider other) { }
@@ -125,6 +125,25 @@ public abstract class BaseState<EState> where EState : Enum
         if (CurrentSubState != null && CurrentSubState != previousState)
             CurrentSubState.EnterStates(this);
     }
+    public void FixedUpdateStates(BaseState<EState> previousState = null)
+    {
+        FixedUpdateState();
+        if (CurrentSuperState != null && CurrentSuperState != previousState)
+            CurrentSuperState.FixedUpdateStates(this);
+        if (CurrentSubState != null && CurrentSubState != previousState)
+            CurrentSubState.FixedUpdateStates(this);
+    }
+    public void AnimationIKState(int layerIndex, BaseState<EState> previousState = null)
+    {
+        OnAnimationIK(layerIndex);
+        if (CurrentSuperState != null && CurrentSuperState != previousState)
+            CurrentSuperState.AnimationIKState(layerIndex, this);
+        if (CurrentSubState != null && CurrentSubState != previousState)
+            CurrentSubState.AnimationIKState(layerIndex, this);
+    }
+
+
+
     public void EnterAllSuperStates()
     {
         if (CurrentSuperState != null)
@@ -156,14 +175,6 @@ public abstract class BaseState<EState> where EState : Enum
             CurrentSubState.ExitState();
             CurrentSubState.ExitAllSubStates();
         }
-    }
-    public void FixedUpdateStates(BaseState<EState> previousState = null)
-    {
-        FixedUpdateState();
-        if (CurrentSuperState != null && CurrentSuperState != previousState)
-            CurrentSuperState.FixedUpdateStates(this);
-        if (CurrentSubState != null && CurrentSubState != previousState)
-            CurrentSubState.FixedUpdateStates(this);
     }
 
     //For debug

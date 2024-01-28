@@ -19,7 +19,6 @@ namespace PlayerStateMachine
         {
             player.rigid.useGravity = false;
         }
-
         public override void CheckTransition()
         {
             if (player.rootState.IsGrounded)
