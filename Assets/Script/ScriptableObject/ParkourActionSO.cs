@@ -5,12 +5,13 @@ using UnityEngine;
 public class ParkourActionSO : ScriptableObject
 {
     [SerializeField] public string animName;
-    [SerializeField] private float minHeight;
-    [SerializeField] private float maxHeight;
+    [SerializeField] private Vector2 height;
+    [SerializeField] private Vector2 distance;
 
-    public bool CanParkour(float height)
+    public bool CanParkour(float height, float distance)
     {
-        if (height >= minHeight && height <= maxHeight)
+        if (height >= this.height.x && height <= this.height.y
+           && distance >= this.distance.x && distance <= this.distance.y)
             return true;
         return false;
     }

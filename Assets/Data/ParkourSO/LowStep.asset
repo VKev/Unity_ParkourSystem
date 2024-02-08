@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: LowStep
   m_EditorClassIdentifier: 
   animName: LowStep
-  minHeight: 0.55
-  maxHeight: 0.69
+  height: {x: 0.55, y: 0.69}
+  distance: {x: 0, y: 1}

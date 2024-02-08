@@ -11,8 +11,7 @@ namespace PlayerStateMachine
         PlayerStateMachine player;
 
         [Header("FLOATING CAPSULE")]
-        [SerializeField] private Vector3 obstacleDetectionOffset = new Vector3(0, 0, 1f);
-        [SerializeField] private Vector3 obstacleHalfExtend = new Vector3(0.15f, 0.01f, 0.2f);
+        [SerializeField] private BoxcastProperties obstacleDetectionHorizontal = new BoxcastProperties(Vector3.zero, new Vector3(0.15f, 0.01f, 0.2f), 1f);
         [SerializeField] private float maxFloatingHeight;
 
 
@@ -23,10 +22,9 @@ namespace PlayerStateMachine
         private float distanceToGround;
         public float DistanceToGround { get { return distanceToGround; } }
 
-        private RaycastHit groundHit;
-        public RaycastHit GroundHit { get { return groundHit; } }
-
-
+        public HitInfo GroundRay { get; private set; } = new HitInfo();
+        public HitInfo Horizontal_ObstacleRay { get; private set; } = new HitInfo();
+        public HitInfo Vertical_ObstacleRay { get; private set; } = new HitInfo();
 
         public Vector3 ColliderTopPoint { get; private set; }
         public Vector3 ColliderCenterPoint { get; private set; }
@@ -34,9 +32,7 @@ namespace PlayerStateMachine
         public Vector3 OriginPoint { get; private set; }
 
         public bool IsGrounded { get; private set; }
-        public bool IsObstacle { get; private set; }
         public float FloatingHeight { get; private set; }
-        public float DetectedObstacleHeight { get; private set; }
 
         public PlayerRootState(PlayerStateMachine.EState key, PlayerStateMachine context, int level) : base(key, context, level)
         {
@@ -48,8 +44,6 @@ namespace PlayerStateMachine
             CurrentSubState.EnterState();
 
             FloatingHeight = maxFloatingHeight;
-            obstacleDetectionOffset.z *= player.ColliderRadius;
-            obstacleDetectionOffset.z += obstacleHalfExtend.z;
         }
 
         public override void UpdateState()
@@ -64,10 +58,10 @@ namespace PlayerStateMachine
 
         private void GroundSphereCast()
         {
-            Physics.SphereCast(
+            GroundRay.isHit = Physics.SphereCast(
                 ColliderBottomPoint,
                 0.01f, Vector3.down,
-                out groundHit,
+                out GroundRay.hit,
                 Mathf.Infinity,
                 groundLayers);
         }
@@ -77,7 +71,7 @@ namespace PlayerStateMachine
             ColliderBottomPoint = ColliderCenterPoint - 0.5f * player.ColliderHeight * Vector3.up;
             ColliderTopPoint = ColliderCenterPoint + 0.5f * player.ColliderHeight * Vector3.up;
 
-            distanceToGround = ColliderBottomPoint.y - groundHit.point.y;
+            distanceToGround = ColliderBottomPoint.y - GroundRay.hit.point.y;
             OriginPoint = ColliderBottomPoint - maxFloatingHeight * Vector3.up;
 
             if (distanceToGround <= ((CurrentSubState?.StateKey == PlayerStateMachine.EState.Grounded) ?
@@ -89,29 +83,69 @@ namespace PlayerStateMachine
 
         private void ObstacleDetection()
         {
-            if (IsObstacle = Physics.BoxCast(
-                ColliderTopPoint + player.transform.forward * obstacleDetectionOffset.z
-                + new Vector3(obstacleDetectionOffset.x, obstacleDetectionOffset.y, 0f),
-                obstacleHalfExtend, Vector3.down,
-                out RaycastHit hitInfo, player.transform.rotation,
-                player.ColliderHeight + maxFloatingHeight - player.groundedState.MaxStairHeight, GroundLayers))
+            Vector3 originUpper = OriginPoint + player.groundedState.MaxStairHeight * Vector3.up;
+            Vector3 forwardOffset = +obstacleDetectionHorizontal.halfExtend.z * player.transform.forward;
+            obstacleDetectionHorizontal.origin = originUpper + forwardOffset;
+
+            if (Horizontal_ObstacleRay.isHit = Physics.BoxCast(
+                obstacleDetectionHorizontal.origin,
+                obstacleDetectionHorizontal.halfExtend,
+                player.transform.forward,
+                out Horizontal_ObstacleRay.hit,
+                player.transform.rotation,
+                obstacleDetectionHorizontal.distance,
+                groundLayers))
             {
-                DetectedObstacleHeight = hitInfo.point.y - OriginPoint.y;
-                Debug.DrawLine(hitInfo.point, hitInfo.point + Vector3.up * (ColliderTopPoint.y - hitInfo.point.y), Color.red);
+                Debug.DrawLine(Horizontal_ObstacleRay.hit.point, Horizontal_ObstacleRay.hit.point + (ColliderTopPoint - OriginPoint - player.groundedState.MaxStairHeight * Vector3.up), Color.red);
+
+                float sphereCastDistance = ColliderTopPoint.y - originUpper.y;
+                float radius = 0.01f;
+                Vector3 origin = Horizontal_ObstacleRay.hit.point + new Vector3(0, sphereCastDistance, 0);
+                if (Vertical_ObstacleRay.isHit = Physics.SphereCast(
+                                origin,
+                                radius,
+                                Vector3.down,
+                                out Vertical_ObstacleRay.hit,
+                                sphereCastDistance,
+                                groundLayers))
+                {
+                    Debug.DrawLine(Vertical_ObstacleRay.hit.point, Vertical_ObstacleRay.hit.point + Vector3.up * (ColliderTopPoint.y - Vertical_ObstacleRay.hit.point.y), Color.magenta);
+                }
             }
+
 
 
         }
 
         public override void OnDrawGizmos()
         {
-            Gizmos.matrix = player.transform.localToWorldMatrix;
             Gizmos.color = Color.green;
-            Gizmos.DrawWireCube(player.transform.InverseTransformPoint(
-                                ColliderTopPoint
-                                + player.transform.forward * obstacleDetectionOffset.z
-                                + new Vector3(obstacleDetectionOffset.x, obstacleDetectionOffset.y, 0f)),
-                                2 * obstacleHalfExtend);
+
+            Gizmos.matrix = player.transform.localToWorldMatrix;
+            Gizmos.DrawWireCube(player.transform.InverseTransformPoint(OriginPoint + player.groundedState.MaxStairHeight * Vector3.up + 0.5f * (obstacleDetectionHorizontal.distance + obstacleDetectionHorizontal.halfExtend.z) * player.transform.forward),
+                                 new Vector3(2f * obstacleDetectionHorizontal.halfExtend.x, 2f * obstacleDetectionHorizontal.halfExtend.y, obstacleDetectionHorizontal.distance + obstacleDetectionHorizontal.halfExtend.z));
+
         }
+    }
+
+    [Serializable]
+    public class BoxcastProperties
+    {
+        [HideInInspector] public Vector3 origin;
+        public Vector3 halfExtend;
+        public float distance;
+
+        public BoxcastProperties(Vector3 origin, Vector3 halfExtend, float distance)
+        {
+            this.origin = origin;
+            this.halfExtend = halfExtend;
+            this.distance = distance;
+        }
+    }
+
+    public class HitInfo
+    {
+        public bool isHit;
+        public RaycastHit hit;
     }
 }

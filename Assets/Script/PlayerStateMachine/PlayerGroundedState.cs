@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -32,6 +33,12 @@ namespace PlayerStateMachine
         public float MaxSlopeAngle { get { return maxSlopeAngle; } }
         public float MaxStairHeight { get { return maxStairHeight; } }
         public float MaxRoughSurfaceHeight { get { return maxRoughSurfaceHeight; } }
+        #endregion
+
+        #region PARKOUR
+        [Header("PARKOUR MOVEMENT")]
+        [SerializeField] private List<ParkourDefaultAction> parkourActions = new List<ParkourDefaultAction>();
+        public ParkourDefaultAction currentParkourAction { get; private set; }
         #endregion
 
         public PlayerGroundedState(PlayerStateMachine.EState key, PlayerStateMachine context, int level) : base(key, context, level)
@@ -87,9 +94,28 @@ namespace PlayerStateMachine
 
         private void JumpActionPerform(InputAction.CallbackContext context)
         {
-            if (player.rootState.IsObstacle && CurrentSubState?.StateKey != PlayerStateMachine.EState.GroundedParkour)
+            if (player.rootState.Horizontal_ObstacleRay.isHit && CurrentSubState?.StateKey != PlayerStateMachine.EState.GroundedParkour)
             {
-                CurrentSubState.TransitionToState(PlayerStateMachine.EState.GroundedParkour);
+                if (parkourActions.Count == 0)
+                {
+                    Debug.LogWarning("No Parkour action available!");
+                    return;
+                }
+                foreach (ParkourDefaultAction parkourAction in parkourActions)
+                {
+                    float obstacleHeight = player.rootState.Vertical_ObstacleRay.hit.point.y - player.rootState.OriginPoint.y;
+
+                    Plane plane = new Plane(player.transform.forward, player.transform.position);
+                    float obstacleDistance = plane.GetDistanceToPoint(player.rootState.Vertical_ObstacleRay.hit.point);
+                    Debug.Log(obstacleHeight + "," + obstacleDistance);
+                    if (parkourAction.action.CanParkour(obstacleHeight, obstacleDistance))
+                    {
+                        currentParkourAction = parkourAction;
+                        CurrentSubState.TransitionToState(PlayerStateMachine.EState.GroundedParkour);
+                        return;
+                    }
+                }
+
             }
         }
     }

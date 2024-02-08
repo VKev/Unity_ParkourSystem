@@ -9,13 +9,6 @@ namespace PlayerStateMachine
     public class PlayerGroundedParkourState : BaseState<PlayerStateMachine.EState>
     {
         PlayerStateMachine player;
-
-        private bool isParkour;
-        private float obstacleHeight;
-
-        private Coroutine parkourActionPerformCoroutine;
-        [SerializeField] private List<ParkourDefaultAction> parkourActions = new List<ParkourDefaultAction>();
-
         public PlayerGroundedParkourState(PlayerStateMachine.EState key, PlayerStateMachine context, int level) : base(key, context, level)
         {
             player = context;
@@ -23,26 +16,8 @@ namespace PlayerStateMachine
 
         public override void EnterState()
         {
-            isParkour = false;
-            obstacleHeight = player.rootState.DetectedObstacleHeight;
-            if (parkourActions.Count == 0)
-            {
-                Debug.LogWarning("No Parkour action available!");
-                return;
-            }
-            Debug.Log(obstacleHeight);
-            foreach (ParkourDefaultAction parkourAction in parkourActions)
-            {
-                if (parkourAction.action.CanParkour(obstacleHeight))
-                {
-                    isParkour = true;
-                    VkevLibrary.StopCoroutine(parkourActionPerformCoroutine, player);
-                    parkourActionPerformCoroutine = player.StartCoroutine(PerformParkourAction(parkourAction));
-                    break;
-                }
-            }
-            if (!isParkour)
-                TransitionToState(PlayerStateMachine.EState.Idle);
+            player.anim.SetFloat(PlayerStateMachine.HORIZONTAL_VELOCITY_PERCENTAGE, 0f);
+            player.StartCoroutine(PerformParkourAction(player.groundedState.currentParkourAction));
         }
         private IEnumerator PerformParkourAction(ParkourDefaultAction parkourAction)
         {
