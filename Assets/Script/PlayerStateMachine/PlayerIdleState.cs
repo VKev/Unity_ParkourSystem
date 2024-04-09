@@ -19,15 +19,18 @@ namespace PlayerStateMachine
         }
         public override void EnterState()
         {
-
             InputController.WalkAction.AddPerformed(WalkActionPerform);
             if (InputController.WalkAction.isPressed)
-                TransitionToState(PlayerStateMachine.EState.Run);
+                player.StartCoroutine(wait1frame_transitionToRunState());
 
             if (CurrentSuperState?.StateKey == PlayerStateMachine.EState.Grounded)
-                player.rigid.velocity = Vector3.zero;
+                player.rigid.linearVelocity = Vector3.zero;
+        }
 
-
+        IEnumerator wait1frame_transitionToRunState()
+        {
+            yield return null;
+            TransitionToState(PlayerStateMachine.EState.Run);
         }
 
         public override void UpdateState()
@@ -37,7 +40,6 @@ namespace PlayerStateMachine
 
         public override void ExitState()
         {
-
             InputController.WalkAction.RemovePerformed(WalkActionPerform);
         }
     }

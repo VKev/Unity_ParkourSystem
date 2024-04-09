@@ -1,26 +1,31 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
-
-[CreateAssetMenu(fileName = "ParkourActionSO", menuName = "ParkourSystem/Create Parkour Action", order = 0)]
-
-public class ParkourActionSO : ScriptableObject
+namespace PlayerStateMachine
 {
-    [SerializeField] public string animName;
-    [SerializeField] private Vector2 height;
-    [SerializeField] private Vector2 distance;
+    [CreateAssetMenu(fileName = "ParkourActionSO", menuName = "ParkourSystem/Create Parkour Action", order = 0)]
 
-    public bool CanParkour(float height, float distance)
+    public class ParkourActionSO : ScriptableObject
     {
-        if (height >= this.height.x && height <= this.height.y
-           && distance >= this.distance.x && distance <= this.distance.y)
-            return true;
-        return false;
-    }
+        [SerializeField] public string animName;
+        [SerializeField] private Vector2 height;
+        [SerializeField] private Vector2 distance;
+        [SerializeField] public float transitionDuration;
 
-    public bool IsName(string name)
-    {
-        if (animName == name)
-            return true;
-        return false;
-    }
+        public bool CanParkour(float height, float distance, PlayerStateMachine.EState currentState)
+        {
+            if (height >= this.height.x && height <= this.height.y
+               && distance >= this.distance.x && distance <= this.distance.y)
+                return true;
+            return false;
+        }
 
+        public bool IsName(string name)
+        {
+            if (animName == name)
+                return true;
+            return false;
+        }
+
+    }
 }

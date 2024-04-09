@@ -19,7 +19,7 @@ namespace PlayerStateMachine
         }
         public override void CheckTransition()
         {
-            if (player.rigid.velocity.y <= 0f)
+            if (player.rigid.linearVelocity.y <= 0f)
             {
                 TransitionToState(PlayerStateMachine.EState.Fall);
             }

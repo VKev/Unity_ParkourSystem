@@ -35,7 +35,7 @@ namespace PlayerStateMachine
 
             accelerateCoroutine = player.StartCoroutine(Accelerate(velocityPercentageThreshold));
 
-            player.rigid.velocity = new Vector3(0, player.rigid.velocity.y, 0);
+            player.rigid.linearVelocity = new Vector3(0, player.rigid.linearVelocity.y, 0);
         }
         public override void ExitState()
         {
@@ -73,10 +73,10 @@ namespace PlayerStateMachine
 
             Vector3 moveDir;
             moveDir = new Vector3(slowRunInput_Lerped.x, 0, slowRunInput_Lerped.y);
-            moveDir = new Vector3(moveDir.x, player.rigid.velocity.y, moveDir.z);
+            moveDir = new Vector3(moveDir.x, player.rigid.linearVelocity.y, moveDir.z);
             moveDir = Quaternion.AngleAxis(player.mainCamera.transform.eulerAngles.y, Vector3.up) * moveDir * player.groundedState.MoveSpeed * Time.fixedDeltaTime;
 
-            player.rigid.velocity = new Vector3(moveDir.x, player.rigid.velocity.y, moveDir.z);
+            player.rigid.linearVelocity = new Vector3(moveDir.x, player.rigid.linearVelocity.y, moveDir.z);
         }
 
         private void WalkActionPerform(InputAction.CallbackContext context)

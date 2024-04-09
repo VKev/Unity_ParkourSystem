@@ -49,9 +49,9 @@ namespace PlayerStateMachine
         {
             InputController.JumpAction.AddPerformed(JumpActionPerform);
 
-            player.rigid.velocity = new Vector3(player.rigid.velocity.x, 0f, player.rigid.velocity.z);
+            player.rigid.linearVelocity = new Vector3(player.rigid.linearVelocity.x, 0f, player.rigid.linearVelocity.z);
             if (CurrentSubState.StateKey == PlayerStateMachine.EState.Idle)
-                player.rigid.velocity = Vector3.zero;
+                player.rigid.linearVelocity = Vector3.zero;
 
         }
         public override void ExitState()
@@ -78,7 +78,6 @@ namespace PlayerStateMachine
                 return;
 
             float changeDistance = Mathf.Abs(player.rootState.DistanceToGround - player.rootState.FloatingHeight);
-
             if (changeDistance < maxStairHeight && changeDistance > maxRoughSurfaceHeight
                 && CurrentSubState.StateKey != PlayerStateMachine.EState.Slide)
             {
@@ -108,7 +107,7 @@ namespace PlayerStateMachine
                     Plane plane = new Plane(player.transform.forward, player.transform.position);
                     float obstacleDistance = plane.GetDistanceToPoint(player.rootState.Vertical_ObstacleRay.hit.point);
                     Debug.Log(obstacleHeight + "," + obstacleDistance);
-                    if (parkourAction.action.CanParkour(obstacleHeight, obstacleDistance))
+                    if (parkourAction.action.CanParkour(obstacleHeight, obstacleDistance, CurrentSubState.StateKey))
                     {
                         currentParkourAction = parkourAction;
                         CurrentSubState.TransitionToState(PlayerStateMachine.EState.GroundedParkour);

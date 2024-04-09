@@ -99,7 +99,6 @@ namespace PlayerStateMachine
         public void Update()
         {
             CurrentState.UpdateStates();
-
             if (stateDebug)
                 Debug.Log(CurrentState.GetAllCurrentStatesToString());
         }
