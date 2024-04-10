@@ -106,9 +106,13 @@ namespace PlayerStateMachine
         {
             CurrentState.FixedUpdateStates();
         }
+        public void LateUpdate()
+        {
+            CurrentState.LateUpdateStates();
+        }
         private void OnAnimatorIK(int layerIndex)
         {
-            CurrentState.OnAnimationIK(layerIndex);
+            CurrentState.AnimationIKState(layerIndex);
         }
     }
 }

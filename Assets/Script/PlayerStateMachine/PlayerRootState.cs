@@ -14,6 +14,7 @@ namespace PlayerStateMachine
         [SerializeField] private BoxcastProperties obstacleDetectionHorizontal = new BoxcastProperties(Vector3.zero, new Vector3(0.15f, 0.01f, 0.2f), 1f);
         [SerializeField] private float maxFloatingHeight;
 
+        [SerializeField] private PlayerLegsProcedural legsProcedural = new PlayerLegsProcedural();
 
         [SerializeField] private LayerMask groundLayers;
         public LayerMask GroundLayers { get { return groundLayers; } }
@@ -44,16 +45,24 @@ namespace PlayerStateMachine
             CurrentSubState.EnterState();
 
             FloatingHeight = maxFloatingHeight;
+            legsProcedural.SetAnimator(player.anim);
+            Debug.Log("testtt");
         }
 
         public override void UpdateState()
         {
             UpdateContinuousVariable();
+
         }
         public override void FixedUpdateState()
         {
             GroundSphereCast();
             ObstacleDetection();
+        }
+
+        public override void OnAnimationIK(int layerIndex)
+        {
+            legsProcedural.GetAnimationIK();
         }
 
         private void GroundSphereCast()

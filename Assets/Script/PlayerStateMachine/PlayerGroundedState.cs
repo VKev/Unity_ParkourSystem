@@ -9,6 +9,7 @@ namespace PlayerStateMachine
     [Serializable]
     public class PlayerGroundedState : BaseState<PlayerStateMachine.EState>
     {
+
         PlayerStateMachine player;
 
         #region HORIZONTAL MOVEMENT

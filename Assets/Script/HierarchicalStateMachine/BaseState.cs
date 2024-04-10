@@ -133,6 +133,14 @@ public class BaseState<EState> where EState : Enum
         if (CurrentSubState != null && CurrentSubState != previousState)
             CurrentSubState.FixedUpdateStates(this);
     }
+    public void LateUpdateStates(BaseState<EState> previousState = null)
+    {
+        LateUpdateState();
+        if (CurrentSuperState != null && CurrentSuperState != previousState)
+            CurrentSuperState.LateUpdateStates(this);
+        if (CurrentSubState != null && CurrentSubState != previousState)
+            CurrentSubState.LateUpdateStates(this);
+    }
     public void AnimationIKState(int layerIndex, BaseState<EState> previousState = null)
     {
         OnAnimationIK(layerIndex);
