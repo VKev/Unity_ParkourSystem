@@ -37,6 +37,10 @@ namespace PlayerStateMachine
         {
             player.anim.SetFloat(PlayerStateMachine.HORIZONTAL_VELOCITY_PERCENTAGE, player.runState.horizontalVelocityPercentage);
         }
+        public override void LateUpdateState()
+        {
+            player.rootState.legsProcedural.FootReplacement();
+        }
 
         public override void ExitState()
         {

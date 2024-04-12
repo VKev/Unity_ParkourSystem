@@ -21,6 +21,7 @@ namespace PlayerStateMachine
         }
         private IEnumerator PerformParkourAction(ParkourDefaultAction parkourAction)
         {
+            player.rootState.legsProcedural.ResetWeight();
             player.anim.applyRootMotion = true;
             float transitionDurationMultiplier = 1f;
             if (player.anim.GetFloat(PlayerStateMachine.HORIZONTAL_VELOCITY_PERCENTAGE) < 0.5f)

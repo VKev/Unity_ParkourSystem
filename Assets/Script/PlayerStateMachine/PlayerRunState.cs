@@ -58,6 +58,10 @@ namespace PlayerStateMachine
         {
             OnMove();
         }
+        public override void LateUpdateState()
+        {
+            player.rootState.legsProcedural.FootReplacement();
+        }
         private void OnRotation()
         {
             Vector3 moveDir;

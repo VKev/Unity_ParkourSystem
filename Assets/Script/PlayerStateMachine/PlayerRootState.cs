@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace PlayerStateMachine
@@ -14,8 +12,11 @@ namespace PlayerStateMachine
         [SerializeField] private BoxcastProperties obstacleDetectionHorizontal = new BoxcastProperties(Vector3.zero, new Vector3(0.15f, 0.01f, 0.2f), 1f);
         [SerializeField] private float maxFloatingHeight;
 
-        [SerializeField] private PlayerLegsProcedural legsProcedural = new PlayerLegsProcedural();
+        [Header("PROCEDURAL ANIMATION")]
+        [SerializeField] public PlayerLegsProcedural legsProcedural = new PlayerLegsProcedural();
 
+
+        [Header("LAYERS MASK")]
         [SerializeField] private LayerMask groundLayers;
         public LayerMask GroundLayers { get { return groundLayers; } }
 
@@ -45,8 +46,7 @@ namespace PlayerStateMachine
             CurrentSubState.EnterState();
 
             FloatingHeight = maxFloatingHeight;
-            legsProcedural.SetAnimator(player.anim);
-            Debug.Log("testtt");
+            legsProcedural.Init(player.anim, player.rootState.groundLayers);
         }
 
         public override void UpdateState()
@@ -58,6 +58,7 @@ namespace PlayerStateMachine
         {
             GroundSphereCast();
             ObstacleDetection();
+            legsProcedural.SphereCast();
         }
 
         public override void OnAnimationIK(int layerIndex)
@@ -134,6 +135,14 @@ namespace PlayerStateMachine
             Gizmos.DrawWireCube(player.transform.InverseTransformPoint(OriginPoint + player.groundedState.MaxStairHeight * Vector3.up + 0.5f * (obstacleDetectionHorizontal.distance + obstacleDetectionHorizontal.halfExtend.z) * player.transform.forward),
                                  new Vector3(2f * obstacleDetectionHorizontal.halfExtend.x, 2f * obstacleDetectionHorizontal.halfExtend.y, obstacleDetectionHorizontal.distance + obstacleDetectionHorizontal.halfExtend.z));
 
+
+            Gizmos.matrix = Matrix4x4.identity;
+            Gizmos.color = Color.green;
+            Vector3 offset = player.transform.forward * 0.1f;
+            Gizmos.DrawCube(legsProcedural.rightFoot.position + legsProcedural.rightFoot.SphereCastOffset - (1 / 2f) * Vector3.up * legsProcedural.rightFoot.sphereCastDistance + offset, new Vector3(0.02f, legsProcedural.rightFoot.sphereCastDistance, 0.02f));
+            Gizmos.DrawCube(legsProcedural.leftFoot.position + legsProcedural.leftFoot.SphereCastOffset - (1 / 2f) * Vector3.up * legsProcedural.leftFoot.sphereCastDistance + offset, new Vector3(0.02f, legsProcedural.leftFoot.sphereCastDistance, 0.02f));
+            Gizmos.DrawSphere(legsProcedural.rightFoot.groundRay.point, 0.1f);
+            Gizmos.DrawSphere(legsProcedural.leftFoot.groundRay.point, 0.1f);
         }
     }
 
