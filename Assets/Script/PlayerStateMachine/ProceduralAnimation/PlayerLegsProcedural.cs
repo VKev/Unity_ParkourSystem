@@ -8,8 +8,10 @@ namespace PlayerStateMachine
     public class PlayerLegsProcedural
     {
         [Header("Foot Replacement")]
-        public float weightDecreaseTime = 0.1f;
-        public float weightIncreaseTime = 0.5f;
+        public float weightDecreaseTime_twoBone = 0.01f;
+        public float weightIncreaseTime_twoBone = 0.5f;
+        public float weightDecreaseTime_rotate = 0.01f;
+        public float weightIncreaseTime_rotate = 0.2f;
         public float replacementSpeed = 25f;
         [field: SerializeField] public FootIKProperties rightFoot { get; private set; } = new FootIKProperties();
         [field: SerializeField] public FootIKProperties leftFoot { get; private set; } = new FootIKProperties();
@@ -51,27 +53,27 @@ namespace PlayerStateMachine
         {
             if (foot.isGrounded)
             {
-                foot.twoBoneIK.data.target.position = Vector3.Lerp(foot.twoBoneIK.data.target.position, foot.groundRay.point + foot.replacementOffset, Time.deltaTime * replacementSpeed);
+                foot.twoBoneIK.data.target.position = Vector3.Lerp(foot.twoBoneIK.data.target.position, foot.groundRay.point + foot.groundRay.normal.normalized * foot.replacementOffset, Time.deltaTime * replacementSpeed);
 
                 float angleX = Vector3.Angle(foot.twoBoneIK.data.target.transform.up, foot.groundRay.normal);
                 float angleY = Vector3.Angle(foot.twoBoneIK.data.target.transform.right, foot.groundRay.normal);
                 foot.rotateIK.data.offset = new Vector3(angleX - 90 + foot.rotateOffset.x, 90 - angleY + foot.rotateOffset.y, foot.rotateOffset.z);
 
-                if (foot.twoBoneIK.data.target.position.y - (foot.groundRay.point.y + foot.replacementOffset.y) < -0.05f)
+                if (Vector3.Dot(foot.twoBoneIK.data.target.position - (foot.groundRay.point + foot.groundRay.normal.normalized * foot.replacementOffset), foot.groundRay.normal) < -0.05f)
                 {
                     foot.twoBoneIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 1f, ref currentVelocity1, 0.02f);
                     foot.rotateIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 1f, ref currentVelocity2, 0.02f);
                 }
                 else
                 {
-                    foot.twoBoneIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 1f, ref currentVelocity1, weightIncreaseTime);
-                    foot.rotateIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 1f, ref currentVelocity2, weightIncreaseTime);
+                    foot.twoBoneIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 1f, ref currentVelocity1, weightIncreaseTime_twoBone);
+                    foot.rotateIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 1f, ref currentVelocity2, weightIncreaseTime_rotate);
                 }
             }
             else
             {
-                foot.twoBoneIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 0f, ref currentVelocity1, weightDecreaseTime);
-                foot.rotateIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 0f, ref currentVelocity2, weightDecreaseTime);
+                foot.twoBoneIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 0f, ref currentVelocity1, weightDecreaseTime_twoBone);
+                foot.rotateIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 0f, ref currentVelocity2, weightDecreaseTime_rotate);
             }
         }
         public void FootReplacement()
@@ -103,7 +105,7 @@ namespace PlayerStateMachine
             public float sphereCastRadius;
             public float sphereCastDistance;
 
-            public Vector3 replacementOffset;
+            public float replacementOffset;
         }
     }
 }

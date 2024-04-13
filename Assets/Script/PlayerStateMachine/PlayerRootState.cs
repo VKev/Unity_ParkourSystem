@@ -82,10 +82,10 @@ namespace PlayerStateMachine
             ColliderTopPoint = ColliderCenterPoint + 0.5f * player.ColliderHeight * Vector3.up;
 
             distanceToGround = ColliderBottomPoint.y - GroundRay.hit.point.y;
-            OriginPoint = ColliderBottomPoint - maxFloatingHeight * Vector3.up;
+            OriginPoint = ColliderBottomPoint - FloatingHeight * Vector3.up;
 
             if (distanceToGround <= ((CurrentSubState?.StateKey == PlayerStateMachine.EState.Grounded) ?
-                                    maxFloatingHeight + player.groundedState.MaxStairHeight : maxFloatingHeight))
+                                    FloatingHeight + player.groundedState.MaxStairHeight : FloatingHeight))
                 IsGrounded = true;
             else
                 IsGrounded = false;
