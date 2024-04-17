@@ -25,6 +25,7 @@ namespace PlayerStateMachine
 
             if (CurrentSuperState?.StateKey == PlayerStateMachine.EState.Grounded)
                 player.rigid.linearVelocity = Vector3.zero;
+
         }
 
         IEnumerator wait1frame_transitionToRunState()

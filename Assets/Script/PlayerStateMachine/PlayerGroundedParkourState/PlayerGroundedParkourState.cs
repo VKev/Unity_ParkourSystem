@@ -41,5 +41,7 @@ namespace PlayerStateMachine
             player.anim.SetFloat(PlayerStateMachine.HORIZONTAL_VELOCITY_PERCENTAGE, 0f);
             TransitionToState(PlayerStateMachine.EState.Idle);
         }
+
+
     }
 }

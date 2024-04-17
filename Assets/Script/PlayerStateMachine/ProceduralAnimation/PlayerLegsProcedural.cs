@@ -15,6 +15,8 @@ namespace PlayerStateMachine
         public float replacementSpeed = 25f;
         [field: SerializeField] public FootIKProperties rightFoot { get; private set; } = new FootIKProperties();
         [field: SerializeField] public FootIKProperties leftFoot { get; private set; } = new FootIKProperties();
+        [HideInInspector] public bool disable = false;
+
 
         private Animator anim;
         private LayerMask groundLayer;
@@ -58,8 +60,7 @@ namespace PlayerStateMachine
                 float angleX = Vector3.Angle(foot.twoBoneIK.data.target.transform.up, foot.groundRay.normal);
                 float angleY = Vector3.Angle(foot.twoBoneIK.data.target.transform.right, foot.groundRay.normal);
                 foot.rotateIK.data.offset = new Vector3(angleX - 90 + foot.rotateOffset.x, 90 - angleY + foot.rotateOffset.y, foot.rotateOffset.z);
-
-                if (Vector3.Dot(foot.twoBoneIK.data.target.position - (foot.groundRay.point + foot.groundRay.normal.normalized * foot.replacementOffset), foot.groundRay.normal) < -0.05f)
+                if (Vector3.Dot(foot.twoBoneIK.data.target.position - (foot.groundRay.point + foot.groundRay.normal.normalized * foot.replacementOffset), foot.groundRay.normal) < -0.00001f)
                 {
                     foot.twoBoneIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 1f, ref currentVelocity1, 0.02f);
                     foot.rotateIK.weight = Mathf.SmoothDamp(foot.twoBoneIK.weight, 1f, ref currentVelocity2, 0.02f);
@@ -83,6 +84,8 @@ namespace PlayerStateMachine
         }
         public void ResetWeight()
         {
+            if (disable)
+                return;
             leftFoot.twoBoneIK.weight = 0f;
             rightFoot.twoBoneIK.weight = 0f;
         }
